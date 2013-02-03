@@ -14,7 +14,18 @@ namespace Flat_Edge_Detection
         {
             Bitmap shred = AForge.Imaging.Image.FromFile("C:\\Users\\jacob\\Pictures\\flatEdge.png");
 
+            Tuple<double, double> variances = analyzeShred(shred);
 
+            Console.Write("variance for left side: ");
+            Console.Write(variances.Item1);
+            Console.WriteLine();
+            Console.Write("variance for right side: ");
+            Console.Write(variances.Item2);
+            Console.ReadLine();
+        }
+
+        static Tuple<double, double> analyzeShred(Bitmap shred)
+        {
             double lMean = 0;
             double rMean = 0;
 
@@ -34,7 +45,7 @@ namespace Flat_Edge_Detection
                     rMean = getAverage(rData);
                 }
                 ArrayList xHits = new ArrayList();
-                
+
                 //traverse each row to record edge location
                 for (int i = 0; i < shred.Width; i++)
                 {
@@ -91,12 +102,9 @@ namespace Flat_Edge_Detection
             double lVariance = lrunsum / count;
             double rVariance = rrunsum / count;
 
-            Console.Write("variance for left side: ");
-            Console.Write(lVariance);
-            Console.WriteLine();
-            Console.Write("variance for right side: ");
-            Console.Write(rVariance);
-            Console.ReadLine();
+            Tuple<double, double> output = new Tuple<double, double>(lVariance, rVariance);
+
+            return output;
         }
 
 
