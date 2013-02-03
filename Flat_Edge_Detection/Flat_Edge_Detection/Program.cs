@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
+using AForge.Imaging.Filters;
 
 namespace Flat_Edge_Detection
 {
@@ -12,7 +13,7 @@ namespace Flat_Edge_Detection
     {
         static void Main(string[] args)
         {
-            Bitmap shred = AForge.Imaging.Image.FromFile("C:\\Users\\jacob\\Pictures\\flatEdge.png");
+            Bitmap shred = AForge.Imaging.Image.FromFile("C:\\Users\\jacob\\Pictures\\shred.png");
 
             Tuple<double, double> variances = analyzeShred(shred);
 
@@ -24,8 +25,12 @@ namespace Flat_Edge_Detection
             Console.ReadLine();
         }
 
-        static Tuple<double, double> analyzeShred(Bitmap shred)
+        static Tuple<double, double> analyzeShred(Bitmap inShred)
         {
+            Bitmap gsShred = Grayscale.CommonAlgorithms.BT709.Apply(inShred);
+            CannyEdgeDetector filter = new CannyEdgeDetector();
+            Bitmap shred = filter.Apply(gsShred);
+
             double lMean = 0;
             double rMean = 0;
 
