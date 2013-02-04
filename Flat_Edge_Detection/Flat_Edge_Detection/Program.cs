@@ -13,7 +13,7 @@ namespace Flat_Edge_Detection
     {
         static void Main(string[] args)
         {
-            Bitmap shred = AForge.Imaging.Image.FromFile("C:\\Users\\jacob\\Pictures\\shred.png");
+            Bitmap shred = AForge.Imaging.Image.FromFile("C:\\Users\\jacob\\Pictures\\flatEdge.png");
 
             Tuple<double, double> variances = analyzeShred(shred);
 
@@ -31,8 +31,8 @@ namespace Flat_Edge_Detection
             CannyEdgeDetector filter = new CannyEdgeDetector();
             Bitmap shred = filter.Apply(gsShred);
             
-            double lMean = 0;
-            double rMean = 0;
+            double lExpected = 0;
+            double rExpected = 0;
 
             double lrunsum = 0;
             double rrunsum = 0;
@@ -47,23 +47,23 @@ namespace Flat_Edge_Detection
 
             int count = 0;
 
-            Queue<int> lData = new Queue<int>();
-            Queue<int> rData = new Queue<int>();
+            Queue<Tuple<Point, double>> lData = new Queue<Tuple<Point, double>>();
+            Queue<Tuple<Point, double>> rData = new Queue<Tuple<Point, double>>();
 
             for (int j = (int)(shred.Height * 0.25); j < (int)(shred.Height * 0.75); j++)
             {
                 if (lData.Count == 10)
                 {
-                    lMean = getAverage(lData);
-                    rMean = getAverage(rData);
-                    lStdDev = getStdDev(lData, lMean);
-                    rStdDev = getStdDev(rData, rMean);
+                    lExpected = getPrediction(lData, j);
+                    rExpected = getPrediction(rData, j);
+                    lStdDev = getStdDev(lData);
+                    rStdDev = getStdDev(rData);
 
-                    lLowBound = lMean - lStdDev * 3;
-                    lHighBound = lMean + lStdDev * 3;
+                    lLowBound = lExpected - lStdDev * 3;
+                    lHighBound = lExpected + lStdDev * 3;
 
-                    rLowBound = rMean - rStdDev * 3;
-                    rHighBound = rMean + rStdDev * 3;
+                    rLowBound = rExpected - rStdDev * 3;
+                    rHighBound = rExpected + rStdDev * 3;
                 }
                 ArrayList xHits = new ArrayList();
 
@@ -100,20 +100,20 @@ namespace Flat_Edge_Detection
                     //add data to queue's
                     if (lData.Count < 10)
                     {
-                        lData.Enqueue(currentLowest);
-                        rData.Enqueue(currentHighest);
+                        lData.Enqueue(new Tuple<Point, double>(new Point(currentLowest, j), currentLowest));
+                        rData.Enqueue(new Tuple<Point, double>(new Point(currentHighest, j), currentHighest));
                     }
                     else
                     {
-                        lData.Enqueue(currentLowest);
+                        lData.Enqueue(new Tuple<Point, double>(new Point(currentLowest, j), lExpected));
                         lData.Dequeue();
-                        rData.Enqueue(currentHighest);
+                        rData.Enqueue(new Tuple<Point, double>(new Point(currentHighest, j), rExpected));
                         rData.Dequeue();
 
                         if (lfilter && rfilter)
                         {
-                            lrunsum += (lMean - currentLowest) * (lMean - currentLowest);
-                            rrunsum += (rMean - currentHighest) * (rMean - currentHighest);
+                            lrunsum += (currentLowest - lExpected) * (currentLowest - lExpected);
+                            rrunsum += (currentHighest - rExpected) * (currentHighest - rExpected);
                             count++;
                         }
                     }
@@ -131,14 +131,14 @@ namespace Flat_Edge_Detection
         }
 
 
-        static double getStdDev(Queue<int> data, double mean)
+        static double getStdDev(Queue<Tuple<Point, double>> data)
         {
             double runsum = 0;
             int counter = 0;
 
-            foreach (int x in data)
+            foreach (Tuple<Point, double> x in data)
             {
-                runsum += (mean - x) * (mean - x);
+                runsum += (x.Item2 - x.Item1.X) * (x.Item2 - x.Item1.X);
                 counter++;
             }
 
@@ -147,16 +147,36 @@ namespace Flat_Edge_Detection
         }
 
 
-        static double getAverage(Queue<int> input)
+        static double getPrediction(Queue<Tuple<Point, double>> input, int j)
         {
-            int runsum = 0;
+            int xrunsum = 0;
+            int yrunsum = 0;
+            int xSquaredRunsum = 0;
+            int productRunsum = 0;
+            int counter = 0;
 
-            foreach (int x in input)
+            foreach (Tuple<Point, double> x in input)
             {
-                runsum += x;
+                Point p = x.Item1;
+                int X = p.Y;
+                int Y = p.X;
+                xrunsum += X;
+                yrunsum += Y;
+                xSquaredRunsum += X * X;
+                productRunsum += X * Y;
+                counter++;
             }
 
-            return runsum / (double)input.Count;
+            double xAve = xrunsum / counter;
+            double yAve = yrunsum / counter;
+
+
+            double m = (counter * productRunsum - xrunsum * yrunsum) / (counter * xSquaredRunsum - xrunsum * xrunsum);
+            double b = yAve - m * xAve;
+            double output = m * j + b;
+            return output;
+
+
         }
     }
 }
