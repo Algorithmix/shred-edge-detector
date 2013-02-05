@@ -27,9 +27,15 @@ namespace Flat_Edge_Detection
 
         static Tuple<double, double> analyzeShred(Bitmap inShred)
         {
+            //apply edge detection
             Bitmap gsShred = Grayscale.CommonAlgorithms.BT709.Apply(inShred);
             CannyEdgeDetector filter = new CannyEdgeDetector();
             Bitmap shred = filter.Apply(gsShred);
+            
+
+            //parameters
+            int queueLength = 100;
+            double maxDistanceFactor = 0.025;
             
             double lExpected = 0;
             double rExpected = 0;
@@ -46,13 +52,14 @@ namespace Flat_Edge_Detection
             double rHighBound = 0;
 
             int count = 0;
+            int lastJ = 0;
 
             Queue<Tuple<Point, double>> lData = new Queue<Tuple<Point, double>>();
             Queue<Tuple<Point, double>> rData = new Queue<Tuple<Point, double>>();
 
             for (int j = (int)(shred.Height * 0.25); j < (int)(shred.Height * 0.75); j++)
             {
-                if (lData.Count == 10)
+                if (lData.Count == queueLength)
                 {
                     lExpected = getPrediction(lData, j);
                     rExpected = getPrediction(rData, j);
@@ -98,23 +105,37 @@ namespace Flat_Edge_Detection
                     bool rfilter = (currentHighest >= rLowBound) && (currentHighest <= rHighBound);
 
                     //add data to queue's
-                    if (lData.Count < 10)
+                    if (lData.Count < queueLength)
                     {
                         lData.Enqueue(new Tuple<Point, double>(new Point(currentLowest, j), currentLowest));
                         rData.Enqueue(new Tuple<Point, double>(new Point(currentHighest, j), currentHighest));
+                        lastJ = j;
                     }
                     else
                     {
-                        lData.Enqueue(new Tuple<Point, double>(new Point(currentLowest, j), lExpected));
-                        lData.Dequeue();
-                        rData.Enqueue(new Tuple<Point, double>(new Point(currentHighest, j), rExpected));
-                        rData.Dequeue();
 
                         if (lfilter && rfilter)
                         {
+                            lData.Enqueue(new Tuple<Point, double>(new Point(currentLowest, j), lExpected));
+                            lData.Dequeue();
+                            rData.Enqueue(new Tuple<Point, double>(new Point(currentHighest, j), rExpected));
+                            rData.Dequeue();
+                            
                             lrunsum += (currentLowest - lExpected) * (currentLowest - lExpected);
                             rrunsum += (currentHighest - rExpected) * (currentHighest - rExpected);
                             count++;
+                            lastJ = j;
+                        }
+                        //if we've gone too far without finding a match, clear the queue
+                        else if (j - lastJ > shred.Height * maxDistanceFactor)
+                        {
+                            for (int i = 0; i < queueLength; i++)
+                            {
+                                rData.Dequeue();
+                                lData.Dequeue();
+                            }
+                            lData.Enqueue(new Tuple<Point, double>(new Point(currentLowest, j), lExpected));
+                            rData.Enqueue(new Tuple<Point, double>(new Point(currentHighest, j), rExpected));
                         }
                     }
                 }
@@ -142,8 +163,13 @@ namespace Flat_Edge_Detection
                 counter++;
             }
 
-            double variance = runsum / counter;
-            return Math.Sqrt(variance);
+            if (runsum == 0)
+                return 100;
+            else
+            {
+                double variance = runsum / (double)counter;
+                return Math.Sqrt(variance);
+            }
         }
 
 
@@ -171,11 +197,10 @@ namespace Flat_Edge_Detection
             double yAve = yrunsum / counter;
 
 
-            double m = (counter * productRunsum - xrunsum * yrunsum) / (counter * xSquaredRunsum - xrunsum * xrunsum);
+            double m = (double)(counter * productRunsum - xrunsum * yrunsum) / (double)(counter * xSquaredRunsum - xrunsum * xrunsum);
             double b = yAve - m * xAve;
             double output = m * j + b;
             return output;
-
 
         }
     }
