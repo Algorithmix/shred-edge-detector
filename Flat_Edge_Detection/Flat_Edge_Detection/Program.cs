@@ -13,29 +13,134 @@ namespace Flat_Edge_Detection
     {
         static void Main(string[] args)
         {
-            Bitmap shred = AForge.Imaging.Image.FromFile("C:\\Users\\jacob\\Pictures\\flatEdge.png");
+            Bitmap shred = AForge.Imaging.Image.FromFile("C:\\Users\\jacob\\Pictures\\image0.png");
+            Tuple<double, double> variances0 = analyzeShred(shred);
 
-            Tuple<double, double> variances = analyzeShred(shred);
+            shred = AForge.Imaging.Image.FromFile("C:\\Users\\jacob\\Pictures\\image1.png");
+            Tuple<double, double> variances1 = analyzeShred(shred);
 
+            shred = AForge.Imaging.Image.FromFile("C:\\Users\\jacob\\Pictures\\image2.png");
+            Tuple<double, double> variances2 = analyzeShred(shred);
+
+            shred = AForge.Imaging.Image.FromFile("C:\\Users\\jacob\\Pictures\\image3.png");
+            Tuple<double, double> variances3 = analyzeShred(shred);
+
+            shred = AForge.Imaging.Image.FromFile("C:\\Users\\jacob\\Pictures\\image4.png");
+            Tuple<double, double> variances4 = analyzeShred(shred);
+
+            shred = AForge.Imaging.Image.FromFile("C:\\Users\\jacob\\Pictures\\image5.png");
+            Tuple<double, double> variances5 = analyzeShred(shred);
+
+            shred = AForge.Imaging.Image.FromFile("C:\\Users\\jacob\\Pictures\\image6.png");
+            Tuple<double, double> variances6 = analyzeShred(shred);
+
+            shred = AForge.Imaging.Image.FromFile("C:\\Users\\jacob\\Pictures\\image7.png");
+            Tuple<double, double> variances7 = analyzeShred(shred);
+
+            shred = AForge.Imaging.Image.FromFile("C:\\Users\\jacob\\Pictures\\image8.png");
+            Tuple<double, double> variances8 = analyzeShred(shred);
+
+            shred = AForge.Imaging.Image.FromFile("C:\\Users\\jacob\\Pictures\\image9.png");
+            Tuple<double, double> variances9 = analyzeShred(shred);
+
+
+            Console.Write("shred0:");
+            Console.WriteLine();
             Console.Write("variance for left side: ");
-            Console.Write(variances.Item1);
+            Console.Write(variances0.Item1);
             Console.WriteLine();
             Console.Write("variance for right side: ");
-            Console.Write(variances.Item2);
+            Console.Write(variances0.Item2);
+            Console.WriteLine();
+
+            Console.Write("shred1:");
+            Console.WriteLine();
+            Console.Write("variance for left side: ");
+            Console.Write(variances1.Item1);
+            Console.WriteLine();
+            Console.Write("variance for right side: ");
+            Console.Write(variances1.Item2);
+            Console.WriteLine();
+
+            Console.Write("shred2:");
+            Console.WriteLine();
+            Console.Write("variance for left side: ");
+            Console.Write(variances2.Item1);
+            Console.WriteLine();
+            Console.Write("variance for right side: ");
+            Console.Write(variances2.Item2);
+            Console.WriteLine();
+
+            Console.Write("shred3:");
+            Console.WriteLine();
+            Console.Write("variance for left side: ");
+            Console.Write(variances3.Item1);
+            Console.WriteLine();
+            Console.Write("variance for right side: ");
+            Console.Write(variances3.Item2);
+            Console.WriteLine();
+
+            Console.Write("shred4:");
+            Console.WriteLine();
+            Console.Write("variance for left side: ");
+            Console.Write(variances4.Item1);
+            Console.WriteLine();
+            Console.Write("variance for right side: ");
+            Console.Write(variances4.Item2);
+            Console.WriteLine();
+
+            Console.Write("shred5:");
+            Console.WriteLine();
+            Console.Write("variance for left side: ");
+            Console.Write(variances5.Item1);
+            Console.WriteLine();
+            Console.Write("variance for right side: ");
+            Console.Write(variances5.Item2);
+            Console.WriteLine();
+
+            Console.Write("shred6:");
+            Console.WriteLine();
+            Console.Write("variance for left side: ");
+            Console.Write(variances6.Item1);
+            Console.WriteLine();
+            Console.Write("variance for right side: ");
+            Console.Write(variances6.Item2);
+            Console.WriteLine();
+
+            Console.Write("shred7:");
+            Console.WriteLine();
+            Console.Write("variance for left side: ");
+            Console.Write(variances7.Item1);
+            Console.WriteLine();
+            Console.Write("variance for right side: ");
+            Console.Write(variances7.Item2);
+            Console.WriteLine();
+
+            Console.Write("shred8:");
+            Console.WriteLine();
+            Console.Write("variance for left side: ");
+            Console.Write(variances8.Item1);
+            Console.WriteLine();
+            Console.Write("variance for right side: ");
+            Console.Write(variances8.Item2);
+            Console.WriteLine();
+
+            Console.Write("shred9:");
+            Console.WriteLine();
+            Console.Write("variance for left side: ");
+            Console.Write(variances9.Item1);
+            Console.WriteLine();
+            Console.Write("variance for right side: ");
+            Console.Write(variances9.Item2);
+            Console.WriteLine();
+
             Console.ReadLine();
         }
 
-        static Tuple<double, double> analyzeShred(Bitmap inShred)
+        static Tuple<double, double> analyzeShred(Bitmap shred)
         {
-            //apply edge detection
-            Bitmap gsShred = Grayscale.CommonAlgorithms.BT709.Apply(inShred);
-            CannyEdgeDetector filter = new CannyEdgeDetector();
-            Bitmap shred = filter.Apply(gsShred);
-            
-
             //parameters
-            int queueLength = 100;
-            double maxDistanceFactor = 0.025;
+            double queueLength = 10;
             
             double lExpected = 0;
             double rExpected = 0;
@@ -52,19 +157,19 @@ namespace Flat_Edge_Detection
             double rHighBound = 0;
 
             int count = 0;
-            int lastJ = 0;
 
             Queue<Tuple<Point, double>> lData = new Queue<Tuple<Point, double>>();
             Queue<Tuple<Point, double>> rData = new Queue<Tuple<Point, double>>();
+            ArrayList lsamples = new ArrayList();
+            ArrayList rsamples = new ArrayList();
 
-            for (int j = (int)(shred.Height * 0.25); j < (int)(shred.Height * 0.75); j++)
+
+            for (int j = (int)(shred.Height * 0.10); j < (int)(shred.Height * 0.9); j++)
             {
-                if (lData.Count == queueLength)
+                if (lData.Count ==  queueLength)
                 {
                     lExpected = getPrediction(lData, j);
                     rExpected = getPrediction(rData, j);
-                    lStdDev = getStdDev(lData);
-                    rStdDev = getStdDev(rData);
 
                     lLowBound = lExpected - lStdDev * 3;
                     lHighBound = lExpected + lStdDev * 3;
@@ -77,7 +182,7 @@ namespace Flat_Edge_Detection
                 //traverse each row to record edge location
                 for (int i = 0; i < shred.Width; i++)
                 {
-                    if (shred.GetPixel(i, j).B >= 50)
+                    if (shred.GetPixel(i, j).R >= 1 || shred.GetPixel(i, j).G >= 1 || shred.GetPixel(i, j).B >= 1)
                     {
                         xHits.Add(i);
                     }
@@ -101,21 +206,14 @@ namespace Flat_Edge_Detection
                         }
                     }
 
-                    bool lfilter = (currentLowest >= lLowBound) && (currentLowest <= lHighBound);
-                    bool rfilter = (currentHighest >= rLowBound) && (currentHighest <= rHighBound);
-
                     //add data to queue's
                     if (lData.Count < queueLength)
                     {
-                        lData.Enqueue(new Tuple<Point, double>(new Point(currentLowest, j), currentLowest));
-                        rData.Enqueue(new Tuple<Point, double>(new Point(currentHighest, j), currentHighest));
-                        lastJ = j;
+                        lData.Enqueue(new Tuple<Point, double>(new Point(currentLowest, j), 0));
+                        rData.Enqueue(new Tuple<Point, double>(new Point(currentHighest, j), 99999));
                     }
                     else
                     {
-
-                        if (lfilter && rfilter)
-                        {
                             lData.Enqueue(new Tuple<Point, double>(new Point(currentLowest, j), lExpected));
                             lData.Dequeue();
                             rData.Enqueue(new Tuple<Point, double>(new Point(currentHighest, j), rExpected));
@@ -124,52 +222,17 @@ namespace Flat_Edge_Detection
                             lrunsum += (currentLowest - lExpected) * (currentLowest - lExpected);
                             rrunsum += (currentHighest - rExpected) * (currentHighest - rExpected);
                             count++;
-                            lastJ = j;
-                        }
-                        //if we've gone too far without finding a match, clear the queue
-                        else if (j - lastJ > shred.Height * maxDistanceFactor)
-                        {
-                            for (int i = 0; i < queueLength; i++)
-                            {
-                                rData.Dequeue();
-                                lData.Dequeue();
-                            }
-                            lData.Enqueue(new Tuple<Point, double>(new Point(currentLowest, j), lExpected));
-                            rData.Enqueue(new Tuple<Point, double>(new Point(currentHighest, j), rExpected));
-                        }
                     }
                 }
             }
 
-            
-
-            double lVariance = lrunsum / count;
-            double rVariance = rrunsum / count;
+            //find average variance
+            double lVariance = lrunsum / (double)count;
+            double rVariance = rrunsum / (double)count;
 
             Tuple<double, double> output = new Tuple<double, double>(lVariance, rVariance);
 
             return output;
-        }
-
-
-        static double getStdDev(Queue<Tuple<Point, double>> data)
-        {
-            double runsum = 0;
-            int counter = 0;
-
-            foreach (Tuple<Point, double> x in data)
-            {
-                runsum += (x.Item2 - x.Item1.X) * (x.Item2 - x.Item1.X);
-                counter++;
-            }
-
-            if (runsum == 0)
-                return 100;
-            else
-            {
-                double variance = runsum / (double)counter;
-                return Math.Sqrt(variance);
-            }
         }
 
 
@@ -193,8 +256,8 @@ namespace Flat_Edge_Detection
                 counter++;
             }
 
-            double xAve = xrunsum / counter;
-            double yAve = yrunsum / counter;
+            double xAve = (double)xrunsum / (double)counter;
+            double yAve = (double)yrunsum / (double)counter;
 
 
             double m = (double)(counter * productRunsum - xrunsum * yrunsum) / (double)(counter * xSquaredRunsum - xrunsum * xrunsum);
